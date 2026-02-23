@@ -37,7 +37,7 @@ public class TelegramHookController {
         String username = update.getMessage().getFrom().getUserName();
         String firstName = update.getMessage().getFrom().getFirstName();
 
-        UsuarioBot usuario = usuarioBotService.getOrCreateUsuario(chatId, firstName, username);
+        UsuarioBot usuario = usuarioBotService.getOrCreateUsuario(chatId, firstName);
         try {
             if(texto.equals("/start")){
                 telegramSender.enviarMensaje(chatId, "Hola! "+ firstName + "!\n"
@@ -133,9 +133,9 @@ public class TelegramHookController {
 
 
         }catch (NumberFormatException e){
-            telegramSender.enviarMensaje(usuario.getTelegramId(), "Error: Usa punto (.) para decimales");
+            telegramSender.enviarMensaje(usuario.getWaId(), "Error: Usa punto (.) para decimales");
         } catch (Exception e){
-            telegramSender.enviarMensaje(usuario.getTelegramId(), e.getMessage());
+            telegramSender.enviarMensaje(usuario.getWaId(), e.getMessage());
         }
     }
 

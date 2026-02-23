@@ -36,7 +36,8 @@ public class SuscripcionService {
 
     public boolean isActiva(Long waId) {
         return repo.findByUsuarioWaId(waId)
-                .map(s -> s.getEstado() == EstadoSuscripcion.ACTIVE)
+                .map(s -> s.getEstado() == EstadoSuscripcion.ACTIVE
+                        && (s.getCurrentPeriodEnd() == null || s.getCurrentPeriodEnd().isAfter(Instant.now())))
                 .orElse(false);
     }
 
@@ -60,5 +61,32 @@ public class SuscripcionService {
         s.setCurrentPeriodEnd(periodEnd);
         s.setUpdatedAt(Instant.now());
         repo.save(s);
+    }
+
+    @Transactional
+    public void actualizarPeriodo(String subscriptionId, Instant periodEnd) {
+        repo.findByStripeSubscriptionId(subscriptionId).ifPresent(s -> {
+            s.setEstado(EstadoSuscripcion.ACTIVE);
+            s.setCurrentPeriodEnd(periodEnd);
+            s.setUpdatedAt(Instant.now());
+            repo.save(s);
+        });
+    }
+
+    @Transactional
+    public Long marcarInactivaPorSubscriptionId(String subscriptionId, String stripeStatus, Instant periodEnd) {
+        Suscripcion s = repo.findByStripeSubscriptionId(subscriptionId).orElse(null);
+        if (s == null) return null;
+
+        EstadoSuscripcion estado = switch (stripeStatus.toLowerCase()) {
+            case "past_due", "unpaid" -> EstadoSuscripcion.PAST_DUE;
+            default -> EstadoSuscripcion.CANCELED;
+        };
+
+        s.setEstado(estado);
+        s.setCurrentPeriodEnd(periodEnd);
+        s.setUpdatedAt(Instant.now());
+        repo.save(s);
+        return s.getUsuario().getWaId();
     }
 }

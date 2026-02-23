@@ -12,35 +12,36 @@ public class UsuarioBotService {
 
     private final UsuarioBotRepository usuarioBotRepository;
 
-    public UsuarioBotService(UsuarioBotRepository usuarioRepo) {
-        this.usuarioBotRepository = usuarioRepo;
+    public UsuarioBotService(UsuarioBotRepository usuarioBotRepository) {
+        this.usuarioBotRepository = usuarioBotRepository;
     }
 
-    @Transactional
-    public UsuarioBot getOrCreateUsuario(Long telegramId, String firstName, String userName){
-        return usuarioRepo.findById(telegramId)
-                .map(usuario -> {
-                    usuario.setPrimerNombre(firstName);
-                    usuario.setUserName(userName);
-                    return usuarioRepo.save(usuario);
+    public UsuarioBot getOrCreateUsuario(Long waId, String primerNombre) {
+        return usuarioBotRepository.findById(waId)
+                .map(usuario -> {usuario.setPrimerNombre(primerNombre);
+                    return usuarioBotRepository.save(usuario);
                 })
                 .orElseGet(() -> {
                     UsuarioBot nuevo = new UsuarioBot();
-                    nuevo.setTelegramId(telegramId);
-                    nuevo.setPrimerNombre(firstName);
-                    nuevo.setUserName(userName);
+                    nuevo.setWaId(waId);
+                    nuevo.setPrimerNombre(primerNombre);
                     nuevo.setEstadoActual(EstadoBot.IDLE);
-                    return usuarioRepo.save(nuevo);
+                    nuevo.setOnboardingEnviado(false);
+                    return usuarioBotRepository.save(nuevo);
                 });
-
     }
 
     @Transactional
-    public void actualizarEstado(Long telegramId, EstadoBot nuevoEstado){
-        UsuarioBot usuario = usuarioRepo.findById(telegramId).orElseThrow();
-        usuario.setEstadoActual(nuevoEstado);
-        usuarioRepo.save(usuario);
+    public void marcarOnboardingEnviado(Long waId) {
+        UsuarioBot usuario = usuarioBotRepository.findById(waId).orElseThrow();
+        usuario.setOnboardingEnviado(true);
+        usuarioBotRepository.save(usuario);
     }
 
-
+    @Transactional
+    public void actualizarEstado(Long waId, EstadoBot nuevoEstado) {
+        UsuarioBot usuario = usuarioBotRepository.findById(waId).orElseThrow();
+        usuario.setEstadoActual(nuevoEstado);
+        usuarioBotRepository.save(usuario);
+    }
 }
